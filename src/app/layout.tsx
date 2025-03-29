@@ -31,10 +31,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased font-sans`}
       >
         <Providers>
-          {children}
-          <div className='bg-[#1B1B1D] p-5 flex items-center justify-center fixed w-full bottom-0'>
+          <main className='flex flex-col items-center justify-center min-h-screen p-24'>
+            {children}
             <Timer />
-          </div>
+          </main>
         </Providers>
         <Toaster />
       </body>

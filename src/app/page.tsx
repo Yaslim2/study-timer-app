@@ -28,13 +28,13 @@ export default function Home() {
   } = useTimer();
 
   const redirectToStatistics = () => {
-    push('/statistics');
+    push('/stats');
   };
 
   const data = [{ value: 'teste 1', label: 'teste 1' }];
 
   return (
-    <div className='flex flex-col items-center justify-center min-h-screen p-24'>
+    <>
       <div className='flex flex-col gap-3 items-center justify-center mb-10'>
         <h1 className='text-5xl font-semibold'>Study Timer App</h1>
         <h2 className='text-2xl font-medium'>
@@ -138,6 +138,6 @@ export default function Home() {
         <IoIosStats />
         Estatísticas
       </Button>
-    </div>
+    </>
   );
 }
