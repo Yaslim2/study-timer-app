@@ -52,6 +52,8 @@ root
 
 ## 🛠️ Instalação e Uso
 
+Se você quiser rodar o projeto localmente, siga os passos abaixo:
+
 1. Clone o repositório:
 
    ```bash
@@ -84,6 +86,9 @@ root
    ```
    http://localhost:3000
    ```
+
+Ou, se preferir, você pode acessar a aplicação diretamente pela GitHub Pages sem precisar rodar localmente.
+[**Acesse a aplicação pelo GitHub Pages**](https://yaslim2.github.io/study-timer-app/)
 
 ## 📝 Contribuição
 

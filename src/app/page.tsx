@@ -65,7 +65,7 @@ export default function Home() {
 
       {!started && (
         <div className='flex flex-col gap-5 items-center justify-center mb-10'>
-          <div className='flex flex-row gap-3 items-center justify-center'>
+          <div className='flex flex-col sm:flex-row gap-3 items-center justify-center'>
             <Combobox
               data={disciplines}
               placeholder='Selecione uma disciplina'
