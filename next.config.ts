@@ -1,7 +1,9 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  output: 'export',
+  basePath: '/study-timer-app',
+  assetPrefix: '/study-timer-app/',
 };
 
 export default nextConfig;
