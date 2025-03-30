@@ -270,6 +270,7 @@ export const TimerProvider = ({ children }: { children: React.ReactNode }) => {
     const themes = disciplines.find((item) => item.value === value)?.themes;
 
     setThemes(themes || []);
+    setSelectedTheme('');
   };
 
   const onCancelDialog = () => {
