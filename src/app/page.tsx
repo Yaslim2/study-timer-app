@@ -7,6 +7,7 @@ import { FaBook, FaLightbulb } from 'react-icons/fa';
 import { IoIosStats } from 'react-icons/io';
 import { useTimer } from '@/context/timerContext';
 import { cn } from '@/lib/utils';
+import ConfirmDialog from '@/components/confirm-dialog';
 
 export default function Home() {
   const { push } = useRouter();
@@ -14,27 +15,47 @@ export default function Home() {
   const {
     stopTimer,
     resetTimer,
-    saveTimer,
+    onSaveTimer,
     isRunning,
     totalTimeInSeconds,
     selectedDiscipline,
     selectedTheme,
-    setSelectedDiscipline,
     setSelectedTheme,
     started,
-
     onStartTimer,
     onCancelTimer,
+    disciplines,
+    themes,
+    onSelectDiscipline,
+    open,
+    description,
+    title,
+    onCancelDialog,
+    cancelDialog,
+    confirmDialog,
+    handleCancelTimer,
+    handleSaveTimer,
   } = useTimer();
 
   const redirectToStatistics = () => {
     push('/stats');
   };
 
-  const data = [{ value: 'teste 1', label: 'teste 1' }];
-
   return (
     <>
+      <ConfirmDialog
+        open={open}
+        description={description}
+        title={title}
+        onContinue={
+          cancelDialog
+            ? handleCancelTimer
+            : confirmDialog
+            ? handleSaveTimer
+            : () => {}
+        }
+        onCancel={onCancelDialog}
+      />
       <div className='flex flex-col gap-3 items-center justify-center mb-10'>
         <h1 className='text-5xl font-semibold'>Study Timer App</h1>
         <h2 className='text-2xl font-medium'>
@@ -46,14 +67,14 @@ export default function Home() {
         <div className='flex flex-col gap-5 items-center justify-center mb-10'>
           <div className='flex flex-row gap-3 items-center justify-center'>
             <Combobox
-              data={data}
+              data={disciplines}
               placeholder='Selecione uma disciplina'
               searchPlaceholder='Procure por uma disciplina'
               value={selectedDiscipline}
-              setValue={setSelectedDiscipline}
+              setValue={onSelectDiscipline}
             ></Combobox>
             <Combobox
-              data={data}
+              data={themes}
               placeholder='Selecione um tema'
               searchPlaceholder='Procure por um tema'
               value={selectedTheme}
@@ -118,7 +139,7 @@ export default function Home() {
 
             {totalTimeInSeconds > 0 && (
               <Button
-                onClick={saveTimer}
+                onClick={onSaveTimer}
                 className={cn(
                   'bg-[#22C55E] text-[#18181b] hover:bg-[#22C55E]/90',
                   totalTimeInSeconds === 0 ? 'w-full' : 'w-[49%]'

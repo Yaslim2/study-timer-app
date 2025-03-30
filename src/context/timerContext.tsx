@@ -9,16 +9,49 @@ import React, {
   useRef,
 } from 'react';
 import { toast } from 'sonner';
+import mockedDisciplines from '@/mocked-data';
+
+interface Theme {
+  value: string;
+  label: string;
+}
+
+interface Discipline {
+  value: string;
+  label: string;
+  themes: Theme[];
+}
+
+interface StudyTime {
+  discipline: string;
+  value: Record<string, number | string>[];
+}
+
+const monthNames = [
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
+];
 
 interface TimerContextType {
   hours: number;
   minutes: number;
   seconds: number;
   totalTimeInSeconds: number;
+  disciplines: Discipline[];
   startTimer: () => void;
   stopTimer: () => void;
   resetTimer: () => void;
-  saveTimer: () => void;
+  onSaveTimer: () => void;
   onStartTimer: () => void;
   onCancelTimer: () => void;
   isRunning: boolean;
@@ -28,13 +61,31 @@ interface TimerContextType {
   setSelectedTheme: React.Dispatch<React.SetStateAction<string>>;
   started: boolean;
   setStarted: React.Dispatch<React.SetStateAction<boolean>>;
+  studyTime: StudyTime[];
+  onSelectDiscipline: (value: string) => void;
+  themes: Theme[];
+  open: boolean;
+  title: string;
+  description: string;
+  onCancelDialog: () => void;
+  cancelDialog: boolean;
+  confirmDialog: boolean;
+  handleCancelTimer: () => void;
+  handleSaveTimer: () => void;
 }
 
 const TimerContext = createContext<TimerContextType | undefined>(undefined);
 
 export const TimerProvider = ({ children }: { children: React.ReactNode }) => {
   const [started, setStarted] = useState<boolean>(false);
+  const [open, setOpen] = useState<boolean>(false);
+  const [title, setTitle] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
+  const [cancelDialog, setCancelDialog] = useState<boolean>(false);
+  const [confirmDialog, setConfirmDialog] = useState<boolean>(false);
 
+  const [disciplines] = useState<Discipline[]>(mockedDisciplines);
+  const [themes, setThemes] = useState<Theme[]>([]);
   const [selectedDiscipline, setSelectedDiscipline] = useState<string>('');
   const [selectedTheme, setSelectedTheme] = useState<string>('');
   const [isRunning, setIsRunning] = useState<boolean>(false);
@@ -42,76 +93,38 @@ export const TimerProvider = ({ children }: { children: React.ReactNode }) => {
   const [minutes, setMinutes] = useState<number>(0);
   const [hours, setHours] = useState<number>(0);
   const [totalTimeInSeconds, setTotalTimeInSeconds] = useState<number>(0);
-
+  const [studyTime, setStudyTime] = useState<StudyTime[]>([]);
   const timerInterval = useRef<NodeJS.Timeout>(undefined);
 
   useEffect(() => {
-    const disciplineSaved = localStorage.getItem('selectedDiscipline');
-    const themeSaved = localStorage.getItem('selectedTheme');
-    if (disciplineSaved) {
-      setSelectedDiscipline(disciplineSaved);
-    }
-    if (themeSaved) {
-      setSelectedTheme(themeSaved);
-    }
-    const savedTime = JSON.parse(
-      localStorage.getItem('timer') || '{"hours":0,"minutes":0,"seconds":0}'
-    );
+    const loadFromStorage = (
+      key: string,
+      fallback: string | [] | Record<string, number>
+    ) => {
+      const saved = localStorage.getItem(key);
+      return saved ? JSON.parse(saved) : fallback;
+    };
+
+    setSelectedDiscipline(loadFromStorage('selectedDiscipline', ''));
+    setSelectedTheme(loadFromStorage('selectedTheme', ''));
+    setStudyTime(loadFromStorage('studyTime', []));
+
+    const savedTime = loadFromStorage('timer', {
+      hours: 0,
+      minutes: 0,
+      seconds: 0,
+    });
     setHours(savedTime.hours);
     setMinutes(savedTime.minutes);
     setSeconds(savedTime.seconds);
-
-    if (savedTime.hours > 0 || savedTime.minutes > 0 || savedTime.seconds > 0) {
-      setStarted(true);
-      setIsRunning(true);
-    }
+    setStarted(
+      savedTime.hours > 0 || savedTime.minutes > 0 || savedTime.seconds > 0
+    );
   }, []);
 
   useEffect(() => {
     localStorage.setItem('timer', JSON.stringify({ hours, minutes, seconds }));
   }, [hours, minutes, seconds]);
-
-  const startTimer = () => {
-    localStorage.setItem('selectedDiscipline', selectedDiscipline);
-    localStorage.setItem('selectedTheme', selectedTheme);
-    setIsRunning(true);
-  };
-
-  const stopTimer = () => {
-    setIsRunning(false);
-  };
-
-  const saveTimer = () => {};
-
-  const resetTimer = () => {
-    setIsRunning(false);
-    setHours(0);
-    setMinutes(0);
-    setSeconds(0);
-  };
-
-  const onStartTimer = () => {
-    if (!selectedDiscipline || !selectedTheme) {
-      toast.error(
-        'Selecione uma disciplina e um tema para iniciar o cronômetro.',
-        {
-          duration: 3000,
-        }
-      );
-    } else {
-      setStarted(true);
-      startTimer();
-    }
-  };
-
-  const onCancelTimer = () => {
-    setStarted(false);
-    resetTimer();
-    setSelectedDiscipline('');
-    setSelectedTheme('');
-    localStorage.removeItem('selectedDiscipline');
-    localStorage.removeItem('selectedTheme');
-  };
 
   useEffect(() => {
     if (isRunning) {
@@ -143,6 +156,127 @@ export const TimerProvider = ({ children }: { children: React.ReactNode }) => {
     setTotalTimeInSeconds(totalSeconds);
   }, [hours, minutes, seconds]);
 
+  const startTimer = () => {
+    localStorage.setItem('selectedDiscipline', selectedDiscipline);
+    localStorage.setItem('selectedTheme', selectedTheme);
+    setIsRunning(true);
+  };
+
+  const stopTimer = () => {
+    setIsRunning(false);
+  };
+
+  const onSaveTimer = () => {
+    setOpen(true);
+    stopTimer();
+    setTitle('Tem certeza que deseja salvar esse registro?');
+    setDescription(
+      'Após salvar o registro de estudo ele será salvo na página de estatísticas.'
+    );
+    setConfirmDialog(true);
+  };
+
+  const handleSaveTimer = () => {
+    stopTimer();
+
+    const currentMonth = monthNames[new Date().getMonth()];
+
+    const storedData = localStorage.getItem('studyTime');
+    const existingData: StudyTime[] = storedData ? JSON.parse(storedData) : [];
+
+    const existingDiscipline = existingData.find(
+      (item) => item.discipline === selectedDiscipline
+    );
+
+    if (existingDiscipline) {
+      const existingMonth = existingDiscipline.value.find(
+        (item) => item.key === currentMonth
+      );
+
+      if (existingMonth) {
+        existingMonth[selectedTheme] =
+          +(existingMonth[selectedTheme] || 0) + totalTimeInSeconds / 60;
+      } else {
+        existingDiscipline.value.push({
+          key: currentMonth,
+          [selectedTheme]: totalTimeInSeconds / 60,
+        });
+      }
+    } else {
+      existingData.push({
+        discipline: selectedDiscipline,
+        value: [
+          {
+            key: currentMonth,
+            [selectedTheme]: totalTimeInSeconds / 60,
+          },
+        ],
+      });
+    }
+
+    localStorage.setItem('studyTime', JSON.stringify(existingData));
+
+    handleCancelTimer();
+
+    setStudyTime(existingData);
+    setConfirmDialog(false);
+    setOpen(false);
+
+    toast.success('Estudo salvo com sucesso!');
+  };
+
+  const resetTimer = () => {
+    stopTimer();
+    setHours(0);
+    setMinutes(0);
+    setSeconds(0);
+  };
+
+  const onStartTimer = () => {
+    if (!selectedDiscipline || !selectedTheme) {
+      toast.error(
+        'Selecione uma disciplina e um tema para iniciar o cronômetro.',
+        {
+          duration: 3000,
+        }
+      );
+    } else {
+      setStarted(true);
+      startTimer();
+    }
+  };
+
+  const onCancelTimer = () => {
+    setOpen(true);
+    stopTimer();
+    setTitle('Tem certeza que deseja cancelar?');
+    setDescription('Ao fazer isso todo o registro de estudo será perdido.');
+    setCancelDialog(true);
+  };
+
+  const handleCancelTimer = () => {
+    setStarted(false);
+    resetTimer();
+    setSelectedDiscipline('');
+    setSelectedTheme('');
+    localStorage.removeItem('selectedDiscipline');
+    localStorage.removeItem('selectedTheme');
+    setCancelDialog(false);
+    setOpen(false);
+  };
+
+  const onSelectDiscipline = (value: string) => {
+    setSelectedDiscipline(value);
+    const themes = disciplines.find((item) => item.value === value)?.themes;
+
+    setThemes(themes || []);
+  };
+
+  const onCancelDialog = () => {
+    setOpen(false);
+    setIsRunning(true);
+  };
+
   return (
     <TimerContext.Provider
       value={{
@@ -153,7 +287,7 @@ export const TimerProvider = ({ children }: { children: React.ReactNode }) => {
         stopTimer,
         resetTimer,
         isRunning,
-        saveTimer,
+        onSaveTimer,
         totalTimeInSeconds,
         selectedDiscipline,
         selectedTheme,
@@ -163,6 +297,18 @@ export const TimerProvider = ({ children }: { children: React.ReactNode }) => {
         setStarted,
         onStartTimer,
         onCancelTimer,
+        studyTime,
+        disciplines,
+        onSelectDiscipline,
+        themes,
+        description,
+        open,
+        title,
+        onCancelDialog,
+        cancelDialog,
+        confirmDialog,
+        handleCancelTimer,
+        handleSaveTimer,
       }}
     >
       {children}

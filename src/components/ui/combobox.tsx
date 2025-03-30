@@ -19,6 +19,11 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
 export function Combobox({
   placeholder,
   searchPlaceholder,
@@ -28,9 +33,9 @@ export function Combobox({
 }: {
   placeholder: string;
   searchPlaceholder: string;
-  data: { value: string; label: string }[];
+  data: SelectOption[];
   value: string;
-  setValue: React.Dispatch<React.SetStateAction<string>>;
+  setValue: (value: string) => void;
 }) {
   const [open, setOpen] = React.useState(false);
 
